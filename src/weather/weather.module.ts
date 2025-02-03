@@ -1,6 +1,6 @@
 /**
  * Weather Module
- * 
+ *
  * This module manages weather-related functionality, including data retrieval,
  * storage, and API integration. It provides a scalable architecture for
  * handling weather information for various locations.

@@ -3,7 +3,13 @@
  * Handles CRUD operations with MongoDB integration and weather data coordination
  * Implements robust error handling and validation pipelines
  */
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Location } from './schema/location.schema';
@@ -28,15 +34,21 @@ export class LocationService {
    * @returns Created location details
    * @throws ConflictException | BadRequestException | InternalServerErrorException
    */
-  async create(createLocationObj: CreateLocationDto): Promise<locationResponceDto> {
+  async create(
+    createLocationObj: CreateLocationDto,
+  ): Promise<locationResponceDto> {
     try {
       // Duplicate check using name field
-      const existingLocation = await this.locationModel.findOne({
-        name: createLocationObj.name,
-      }).exec();
+      const existingLocation = await this.locationModel
+        .findOne({
+          name: createLocationObj.name,
+        })
+        .exec();
 
       if (existingLocation) {
-        throw new ConflictException(`Location '${createLocationObj.name}' exists`);
+        throw new ConflictException(
+          `Location '${createLocationObj.name}' exists`,
+        );
       }
 
       // Database operation with schema validation
@@ -65,16 +77,16 @@ export class LocationService {
   async findAll(): Promise<AlllocationsResponceDto> {
     try {
       const locations = await this.locationModel.find().exec();
-      
+
       return {
         counts: locations.length,
-        locations: locations.map(loc => {
+        locations: locations.map((loc) => {
           // Data validation guard clause
           if (!loc?.id || !loc.name || !loc.latitude || !loc.longitude) {
             throw new InternalServerErrorException('Invalid location format');
           }
           return this.mapToLocationResponse(loc);
-        })
+        }),
       };
     } catch (error) {
       // Unified error handling
@@ -86,15 +98,15 @@ export class LocationService {
    * Get single location by ID with validation
    * @param id Location identifier
    * @returns Location details
-   * @throws NotFoundException | BadRequestException | InternalServerErrorException 
+   * @throws NotFoundException | BadRequestException | InternalServerErrorException
    */
   async findOne(id: string): Promise<locationResponceDto> {
     const objectId = this.validateObjectId(id);
-    
+
     try {
       const location = await this.locationModel.findById(objectId).exec();
       if (!location) throw new NotFoundException(`Location ${id} not found`);
-      
+
       // Structural validation
       if (!location.name || !location.latitude || !location.longitude) {
         throw new InternalServerErrorException('Invalid location data');
@@ -113,18 +125,22 @@ export class LocationService {
    * @returns Updated location details
    * @throws NotFoundException | BadRequestException | InternalServerErrorException
    */
-  async update(id: string, updateLocationDto: UpdateLocationDto): Promise<locationResponceDto> {
+  async update(
+    id: string,
+    updateLocationDto: UpdateLocationDto,
+  ): Promise<locationResponceDto> {
     this.validateObjectId(id);
 
     try {
       const updatedLocation = await this.locationModel
         .findByIdAndUpdate(id, updateLocationDto, {
           new: true,
-          runValidators: true // Enforce schema validation
+          runValidators: true, // Enforce schema validation
         })
         .exec();
 
-      if (!updatedLocation) throw new NotFoundException(`Location ${id} not found`);
+      if (!updatedLocation)
+        throw new NotFoundException(`Location ${id} not found`);
       return this.mapToLocationResponse(updatedLocation);
     } catch (error) {
       this.handleDatabaseError(error, 'update location');
@@ -141,15 +157,20 @@ export class LocationService {
     this.validateObjectId(id);
 
     try {
-      const deletedLocation = await this.locationModel.findByIdAndDelete(id).exec();
-      if (!deletedLocation) throw new NotFoundException(`Location ${id} not found`);
+      const deletedLocation = await this.locationModel
+        .findByIdAndDelete(id)
+        .exec();
+      if (!deletedLocation)
+        throw new NotFoundException(`Location ${id} not found`);
 
       // Cascade delete related weather data
-      await this.weatherService.deleteWeatherRecordsByLocationId(deletedLocation.id);
+      await this.weatherService.deleteWeatherRecordsByLocationId(
+        deletedLocation.id,
+      );
 
-      return { 
+      return {
         ...this.mapToLocationResponse(deletedLocation),
-        isDeleted: true 
+        isDeleted: true,
       };
     } catch (error) {
       this.handleDatabaseError(error, 'remove location');
@@ -159,7 +180,7 @@ export class LocationService {
   // --------------------------
   //  Helper Methods
   // --------------------------
-  
+
   /** Validate and convert string ID to MongoDB ObjectId */
   private validateObjectId(id: string): Types.ObjectId {
     try {
@@ -171,10 +192,13 @@ export class LocationService {
 
   /** Centralized error handling for database operations */
   private handleDatabaseError(error: any, context: string): never {
-    if (error instanceof NotFoundException || 
-        error instanceof BadRequestException) throw error;
+    if (
+      error instanceof NotFoundException ||
+      error instanceof BadRequestException
+    )
+      throw error;
 
-    switch(error.name) {
+    switch (error.name) {
       case 'ValidationError':
         throw new BadRequestException(this.formatValidationError(error));
       case 'CastError':
@@ -192,7 +216,7 @@ export class LocationService {
       id: location.id,
       name: location.name,
       latitude: location.latitude,
-      longitude: location.longitude
+      longitude: location.longitude,
     };
   }
 

@@ -13,12 +13,9 @@ export class Weather extends Document {
   date: Date;
 
   @Prop({
-    type: Date,
+    type: Number,
     required: true,
     index: true,
-    // Optional: Normalize date to day start (00:00:00)
-    get: (v: Date) => new Date(v).setHours(0, 0, 0, 0),
-    set: (v: Date) => new Date(v).setHours(0, 0, 0, 0),
   })
   temperature: number;
 
